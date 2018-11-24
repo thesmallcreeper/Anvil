@@ -1,2 +1,9 @@
 build/
 include/config.h
+/.vs/VSWorkspaceState.json
+/.vs/slnx.sqlite
+/.vs/ProjectSettings.json
+/.vs/Anvil/v15/Browse.VC.db
+/.vs/Anvil/v15/.suo
+/.vs/Anvil/v15
+/.vs

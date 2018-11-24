@@ -53,6 +53,18 @@ namespace Anvil
          **/
         WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
 
+		/* Call-back issued when the user presses a key that was up before.
+		 *
+		 * callback_arg: pointer to a OnKeypressPressedWasUpCallbackArgument instance.
+		 **/
+		WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+
+		/* Call-back issued when the user move the mouse. Movement is relative.
+		 *
+		 * callback_arg: pointer to a OnMouseMovementCallbackArgument instance.
+		 **/
+		WINDOW_CALLBACK_ID_MOUSE_MOVED,
+
         /* Always last */
         WINDOW_CALLBACK_ID_COUNT
     };

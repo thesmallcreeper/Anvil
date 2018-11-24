@@ -141,6 +141,37 @@ namespace Anvil
         }
     } OnKeypressReleasedCallbackArgument;
 
+	typedef struct OnKeypressPressedWasUpCallbackArgument : public Anvil::CallbackArgument
+	{
+		KeyID         pressed_key_id;
+		const Window* window_ptr;
+
+		explicit OnKeypressPressedWasUpCallbackArgument(Window* in_window_ptr,
+			KeyID   in_released_key_id)
+			:pressed_key_id(in_released_key_id),
+			window_ptr(in_window_ptr)
+		{
+			/* Stub */
+		}
+	} OnKeypressPressedWasUpCallbackArgument;
+
+	typedef struct OnMouseMovementCallbackArgument : public Anvil::CallbackArgument
+	{
+		long xOffset;
+		long yOffset;
+		const Window* window_ptr;
+
+		explicit OnMouseMovementCallbackArgument(Window* in_window_ptr,
+			long    in_xOffset,
+			long	 in_yOffset)
+			:xOffset(in_xOffset),
+			yOffset(in_yOffset),
+			window_ptr(in_window_ptr)
+		{
+			/* Stub */
+		}
+	} OnMouseMovementCallbackArgument;
+
     typedef struct OnMemoryBlockNeededForBufferCallbackArgument : public Anvil::CallbackArgument
     {
         explicit OnMemoryBlockNeededForBufferCallbackArgument(const Anvil::Buffer* in_buffer_ptr)

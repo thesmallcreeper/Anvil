@@ -221,7 +221,7 @@ bool Anvil::WindowWin3264::init(const bool& in_visible)
         m_window = ::CreateWindowEx(0,                    /* dwExStyle */
                                     window_class_name,
                                     m_title.c_str(),
-                                    (WS_OVERLAPPEDWINDOW | visibility_flag | WS_SYSMENU) ^ WS_THICKFRAME,
+									(WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | visibility_flag),
                                     0, /* X */
                                     0, /* Y */
                                     window_rect.right - window_rect.left,
@@ -274,46 +274,137 @@ LRESULT CALLBACK Anvil::WindowWin3264::msg_callback_pfn_proc(HWND   in_window_ha
     WindowWin3264* window_ptr = reinterpret_cast<WindowWin3264*>(::GetWindowLongPtr(in_window_handle,
                                                                                     GWLP_USERDATA) );
 
-    switch (in_message_id)
-    {
-        case WM_DESTROY:
-        {
-            window_ptr->m_window_should_close = true;
+	switch (in_message_id)
+	{
+		case WM_DESTROY:
+		{
+			window_ptr->m_window_should_close = true;
 
-            ::PostQuitMessage(0);
+			::PostQuitMessage(0);
 
-            return 0;
-        }
+			return 0;
+		}
 
-        case WM_CLOSE:
-        case WM_DESTROY_WINDOW:
-        {
-            OnWindowAboutToCloseCallbackArgument callback_argument(window_ptr);
+		case WM_CLOSE:
+		case WM_DESTROY_WINDOW:
+		{
+			OnWindowAboutToCloseCallbackArgument callback_argument(window_ptr);
 
-            window_ptr->callback(WINDOW_CALLBACK_ID_ABOUT_TO_CLOSE,
-                                &callback_argument);
+			window_ptr->callback(WINDOW_CALLBACK_ID_ABOUT_TO_CLOSE,
+				&callback_argument);
 
-            ::DestroyWindow(window_ptr->m_window);
+			::DestroyWindow(window_ptr->m_window);
 
-            break;
-        }
+			break;
+		}
 
-        case WM_KEYUP:
-        {
-            OnKeypressReleasedCallbackArgument callback_data(window_ptr,
-                                                             static_cast<Anvil::KeyID>(LOWORD(in_param_wide) & 0xFF) );
+		case WM_KEYUP:
+		{
+			OnKeypressReleasedCallbackArgument callback_data(window_ptr,
+				static_cast<Anvil::KeyID>(LOWORD(in_param_wide) & 0xFF));
 
-            window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
-                                &callback_data);
+			window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
+				&callback_data);
 
-            return 0;
-        }
+			return 0;
+		}
 
-        default:
-        {
-            break;
-        }
-    }
+		case WM_KEYDOWN:
+		{
+			OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr,
+				static_cast<Anvil::KeyID>(LOWORD(in_param_wide) & 0xFF));
+
+
+			if (((in_param_long) & 0x40000000) == 0)
+			{
+				window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+					&callback_data);
+			}
+
+
+			return 0;
+		}
+
+		case WM_INPUT:
+		{
+			UINT dwSize;
+
+			GetRawInputData((HRAWINPUT)in_param_long, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
+			std::vector<char> m_RawInputMessageData;
+
+			if (dwSize == 0)
+				return 0;
+			else
+				m_RawInputMessageData.resize(dwSize);
+
+
+			void* dataBuf = &m_RawInputMessageData[0];
+			GetRawInputData((HRAWINPUT)in_param_long, RID_INPUT, dataBuf, &dwSize, sizeof(RAWINPUTHEADER));
+
+			const RAWINPUT *raw = (const RAWINPUT*)dataBuf;
+
+			if (raw->header.dwType == RIM_TYPEMOUSE)
+			{
+				const RAWMOUSE& mouseData = raw->data.mouse;
+
+				if (mouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_LBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+						&callback_data);
+				}
+
+				if (mouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_LBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
+						&callback_data);
+				}
+
+				if (mouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_RBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+						&callback_data);
+				}
+
+				if (mouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_RBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
+						&callback_data);
+				}
+
+				if (mouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_MBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+						&callback_data);
+				}
+
+				if (mouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP)
+				{
+					OnKeypressPressedWasUpCallbackArgument callback_data(window_ptr, KEY_ID_MBUTTON);
+					window_ptr->callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
+						&callback_data);
+				}
+
+				if ((mouseData.lLastX != 0) || (mouseData.lLastY != 0))
+				{
+					OnMouseMovementCallbackArgument callback_data(window_ptr, mouseData.lLastX, mouseData.lLastY);
+					window_ptr->callback(WINDOW_CALLBACK_ID_MOUSE_MOVED,
+						&callback_data);
+
+					SetCursorPos(256, 256);
+				}
+			}
+		}
+
+		default:
+		{
+			break;
+		}
+	}
 
     return DefWindowProc(in_window_handle,
                          in_message_id,
