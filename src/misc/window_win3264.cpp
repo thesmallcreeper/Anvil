@@ -337,7 +337,6 @@ LRESULT CALLBACK Anvil::WindowWin3264::msg_callback_pfn_proc(HWND   in_window_ha
 			else
 				m_RawInputMessageData.resize(dwSize);
 
-
 			void* dataBuf = &m_RawInputMessageData[0];
 			GetRawInputData((HRAWINPUT)in_param_long, RID_INPUT, dataBuf, &dwSize, sizeof(RAWINPUTHEADER));
 
