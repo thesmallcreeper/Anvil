@@ -152,7 +152,7 @@ namespace Anvil
 
         virtual void* get_XCBLoader() const {return nullptr; }
 
-        virtual bool msg_callback(xcb_generic_event_t* event_ptr) {return false; }
+        virtual bool msg_callback(void*) {return false; }
 
         /** Returns system window handle. */
         WindowHandle get_handle() const
