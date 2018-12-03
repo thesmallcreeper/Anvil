@@ -27,6 +27,7 @@
 #ifndef WINDOW_XCB_H
 #define WINDOW_XCB_H
 
+#include <set>
 #include "misc/window.h"
 
 namespace Anvil
@@ -100,7 +101,13 @@ namespace Anvil
             int32_t xPos = -1;
             int32_t yPos = -1;
         } mouseLastPos;
-        xcb_timestamp_t          last_button_release_timestamp;
+        struct {
+            xcb_timestamp_t last_button_release_timestamp;
+            xcb_button_t    last_button_release;
+        } lastButtonReleaseInfo;
+        std::set<xcb_keysym_t>   which_keys_are_being_pressed_set;
+
+
     };
 }; /* namespace Anvil */
 

@@ -477,6 +477,8 @@ bool Anvil::WindowXcb::msg_callback(void* event_ptr)
             if(sym >= 'a' && sym <='z')
                 sym -= 'a' - 'A';
 
+            which_keys_are_being_pressed_set.erase(sym);
+
             OnKeypressReleasedCallbackArgument callback_argument(this,
                                                                  static_cast<Anvil::KeyID>(sym));
 
@@ -498,11 +500,14 @@ bool Anvil::WindowXcb::msg_callback(void* event_ptr)
             if(sym >= 'a' && sym <='z')
                 sym -= 'a' - 'A';
 
-            OnKeypressPressedWasUpCallbackArgument callback_argument(this,
-                                                                     static_cast<Anvil::KeyID>(sym));
+            if(which_keys_are_being_pressed_set.emplace(sym).second == true)
+            {
+                OnKeypressPressedWasUpCallbackArgument callback_argument(this,
+                                                                         static_cast<Anvil::KeyID>(sym));
 
-            callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
-                     &callback_argument);
+                callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+                         &callback_argument);
+            }
 
             break;
         }
@@ -525,13 +530,14 @@ bool Anvil::WindowXcb::msg_callback(void* event_ptr)
                 OnKeypressReleasedCallbackArgument callback_argument(this, KEY_ID_RBUTTON);
                 callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED, &callback_argument);
             }
-            last_button_release_timestamp = key_ptr->time;
+            lastButtonReleaseInfo.last_button_release_timestamp = key_ptr->time;
+            lastButtonReleaseInfo.last_button_release = key_ptr->detail;
         }
 
         case XCB_BUTTON_PRESS:
         {
             const xcb_button_press_event_t* key_ptr = reinterpret_cast<const xcb_button_press_event_t*>(event_ptr);
-            if(key_ptr->time != last_button_release_timestamp)
+            if(key_ptr->time != lastButtonReleaseInfo.last_button_release_timestamp || key_ptr->detail != lastButtonReleaseInfo.last_button_release)
             {
                 if(key_ptr->detail == 1)
                 {
