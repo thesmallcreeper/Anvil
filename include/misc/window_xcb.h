@@ -68,6 +68,13 @@ namespace Anvil
             return m_connection_ptr;
         }
 
+        virtual void* get_XCBLoader() const
+        {
+            const void* XCBLoader_ptr = static_cast<const void*>(&m_xcb_loader);
+            return const_cast<void*>(XCBLoader_ptr);
+        }
+        virtual bool msg_callback(xcb_generic_event_t* event_ptr);
+
     private:
         WindowXcb(const std::string&             in_title,
                   unsigned int                   in_width,
@@ -87,6 +94,13 @@ namespace Anvil
         xcb_screen_t*            m_screen_ptr;
         xcb_key_symbols_t*       m_key_symbols;
         XCBLoader                m_xcb_loader;
+
+
+        struct {
+            int32_t xPos = -1;
+            int32_t yPos = -1;
+        } mouseLastPos;
+        xcb_timestamp_t          last_button_release_timestamp;
     };
 }; /* namespace Anvil */
 

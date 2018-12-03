@@ -284,6 +284,7 @@ namespace Anvil
         }
     } OnWindowAboutToCloseCallbackArgument;
 
+    typedef OnWindowAboutToCloseCallbackArgument OnWindowCloseEventCallbackArgument;
 
     /** Interface which provides entrypoints that let class users sign up and sign out of
      *  notifications.

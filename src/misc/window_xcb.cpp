@@ -19,6 +19,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
+#include <include/misc/window_xcb.h>
 #include "misc/window_xcb.h"
 
 /* Copy-pasted from xcb-icccm.h header, as there's no really good reason to include
@@ -198,8 +199,20 @@ bool Anvil::WindowXcb::init(const bool& in_visible)
             goto end;
         }
 
+        // Make input messages more WINAPI-like
+        xcb_procs_ptr->pfn_xcbXkbUseExtension(m_connection_ptr, XCB_XKB_MAJOR_VERSION, XCB_XKB_MINOR_VERSION);
+
+        xcb_procs_ptr->pfn_xcbXkbPerClientFlags(m_connection_ptr,
+                                                XCB_XKB_ID_USE_CORE_KBD,
+                                                XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+                                                XCB_XKB_PER_CLIENT_FLAG_DETECTABLE_AUTO_REPEAT,
+                                                0,0,0);
+
         value_list[0] = m_screen_ptr->black_pixel;
-        value_list[1] = XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+        value_list[1] = XCB_EVENT_MASK_POINTER_MOTION|
+                        XCB_EVENT_MASK_BUTTON_PRESS  | XCB_EVENT_MASK_BUTTON_RELEASE    |
+                        XCB_EVENT_MASK_KEY_PRESS     | XCB_EVENT_MASK_KEY_RELEASE       |
+                        XCB_EVENT_MASK_EXPOSURE      | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
         m_window = xcb_procs_ptr->pfn_xcbGenerateId(m_connection_ptr);
 
@@ -216,6 +229,20 @@ bool Anvil::WindowXcb::init(const bool& in_visible)
                                            m_screen_ptr->root_visual,
                                            value_mask,
                                            value_list);
+
+        // Hide cursor hack
+        xcb_cursor_t cur = xcb_procs_ptr->pfn_xcbGenerateId(m_connection_ptr);
+        xcb_pixmap_t pix = xcb_procs_ptr->pfn_xcbGenerateId(m_connection_ptr);
+
+        xcb_procs_ptr->pfn_xcbCreatePixmap(m_connection_ptr, 1, pix, m_window, 1, 1);
+        xcb_procs_ptr->pfn_xcbCreateCursor(m_connection_ptr, cur, pix, pix, 0, 0, 0, 0, 0, 0, 1, 1);
+
+        xcb_procs_ptr->pfn_xcbChangeWindowAttributes(m_connection_ptr,
+                                                     m_window,
+                                                     XCB_CW_CURSOR,
+                                                     &cur);
+
+        xcb_procs_ptr->pfn_xcbFlush(m_connection_ptr);
 
         /* Anvil does not currently support run-time swapchain resizing so make sure WMs are aware
          * the window we created is not supposed to be resizable.
@@ -370,62 +397,7 @@ void Anvil::WindowXcb::run()
 
         if (event_ptr)
         {
-            switch (event_ptr->response_type & 0x7f)
-            {
-                case XCB_CLIENT_MESSAGE:
-                {
-                    if ((reinterpret_cast<xcb_client_message_event_t*>(event_ptr)->data.data32[0] == m_atom_wm_delete_window_ptr->atom) &&
-                        m_closable)
-                    {
-                        running = false;
-                    }
-
-                    break;
-                }
-
-                case XCB_KEY_RELEASE:
-                {
-                    const xcb_key_release_event_t* key_ptr = reinterpret_cast<const xcb_key_release_event_t*>(event_ptr);
-                    xcb_keysym_t                   sym;
-
-                    sym = m_xcb_loader.get_procs_table()->pfn_xcbKeyReleaseLookupKeysym(m_key_symbols,
-                                                                                        const_cast<xcb_key_release_event_t*>(key_ptr),
-                                                                                        0);
-
-                    OnKeypressReleasedCallbackArgument callback_argument(this,
-                                                                         static_cast<Anvil::KeyID>(sym));
-
-                    callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
-                            &callback_argument);
-
-                    break;
-                }
-
-                case XCB_DESTROY_NOTIFY:
-                {
-                    running = false;
-
-                    break;
-                }
-
-                case XCB_EXPOSE:
-                {
-                    if (m_present_callback_func != nullptr)
-                    {
-                        m_present_callback_func();
-                    }
-
-                    running = !m_window_should_close;
-                    break;
-                }
-
-                default:
-                {
-                    break;
-                }
-            }
-
-            free(event_ptr);
+            running = msg_callback(event_ptr);
         }
         else
         {
@@ -441,4 +413,162 @@ void Anvil::WindowXcb::run()
     close();
 
     m_window_close_finished = true;
+}
+
+bool Anvil::WindowXcb::msg_callback(xcb_generic_event_t* event_ptr)
+{
+    bool keepRunning = true;
+    switch (event_ptr->response_type & 0x7f)
+    {
+        case XCB_CLIENT_MESSAGE:
+            if (!((reinterpret_cast<xcb_client_message_event_t*>(event_ptr)->data.data32[0] == m_atom_wm_delete_window_ptr->atom) &&
+                m_closable))
+                break;
+
+        case XCB_DESTROY_NOTIFY:
+         {
+            OnWindowAboutToCloseCallbackArgument callback_argument(this);
+
+            callback(WINDOW_CALLBACK_ID_CLOSE_EVENT,
+                     &callback_argument);
+
+            keepRunning = false;
+            break;
+         }
+
+
+        case XCB_MOTION_NOTIFY:
+        {
+            const xcb_motion_notify_event_t* key_ptr = reinterpret_cast<const xcb_motion_notify_event_t*>(event_ptr);
+
+            const int32_t resetXPOS = 256;
+            const int32_t resetYPOS = 256;
+
+            if((mouseLastPos.xPos != -1 && mouseLastPos.yPos != -1) && (key_ptr->event_x != resetXPOS || key_ptr->event_y != resetYPOS))
+            {
+                OnMouseMovementCallbackArgument callback_argument(this,
+                                                                  key_ptr->event_x - mouseLastPos.xPos,
+                                                                  key_ptr->event_y - mouseLastPos.yPos);
+
+                callback(WINDOW_CALLBACK_ID_MOUSE_MOVED,
+                         &callback_argument);
+
+                m_xcb_loader.get_procs_table() -> pfn_xcbWarpPointer(m_connection_ptr,
+                                                                     m_window,
+                                                                     m_window,
+                                                                     0,0,0,0,
+                                                                     resetXPOS,
+                                                                     resetYPOS);
+            }
+
+            mouseLastPos.xPos = key_ptr->event_x;
+            mouseLastPos.yPos = key_ptr->event_y;
+            break;
+        }
+
+        case XCB_KEY_RELEASE:
+        {
+            const xcb_key_release_event_t* key_ptr = reinterpret_cast<const xcb_key_release_event_t*>(event_ptr);
+            xcb_keysym_t                   sym;
+
+            sym = m_xcb_loader.get_procs_table()->pfn_xcbKeyReleaseLookupKeysym(m_key_symbols,
+                                                                                const_cast<xcb_key_release_event_t*>(key_ptr),
+                                                                                0);
+            if(sym >= 'a' && sym <='z')
+                sym -= 'a' - 'A';
+
+            OnKeypressReleasedCallbackArgument callback_argument(this,
+                                                                 static_cast<Anvil::KeyID>(sym));
+
+            callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED,
+                     &callback_argument);
+
+            break;
+        }
+
+        case XCB_KEY_PRESS:
+        {
+            const xcb_key_press_event_t* key_ptr = reinterpret_cast<const xcb_key_press_event_t*>(event_ptr);
+            xcb_keysym_t                   sym;
+
+            sym = m_xcb_loader.get_procs_table()->pfn_xcbKeyPressLookupKeysym(m_key_symbols,
+                                                                              const_cast<xcb_key_press_event_t*>(key_ptr),
+                                                                              0);
+
+            if(sym >= 'a' && sym <='z')
+                sym -= 'a' - 'A';
+
+            OnKeypressPressedWasUpCallbackArgument callback_argument(this,
+                                                                     static_cast<Anvil::KeyID>(sym));
+
+            callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP,
+                     &callback_argument);
+
+            break;
+        }
+
+        case XCB_BUTTON_RELEASE:
+        {
+            const xcb_button_release_event_t* key_ptr = reinterpret_cast<const xcb_button_release_event_t*>(event_ptr);
+            if(key_ptr->detail == 1)
+            {
+                OnKeypressReleasedCallbackArgument callback_argument(this, KEY_ID_LBUTTON);
+                callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED, &callback_argument);
+            }
+            if(key_ptr->detail == 2)
+            {
+                OnKeypressReleasedCallbackArgument callback_argument(this, KEY_ID_MBUTTON);
+                callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED, &callback_argument);
+            }
+            if(key_ptr->detail == 3)
+            {
+                OnKeypressReleasedCallbackArgument callback_argument(this, KEY_ID_RBUTTON);
+                callback(WINDOW_CALLBACK_ID_KEYPRESS_RELEASED, &callback_argument);
+            }
+            last_button_release_timestamp = key_ptr->time;
+        }
+
+        case XCB_BUTTON_PRESS:
+        {
+            const xcb_button_press_event_t* key_ptr = reinterpret_cast<const xcb_button_press_event_t*>(event_ptr);
+            if(key_ptr->time != last_button_release_timestamp)
+            {
+                if(key_ptr->detail == 1)
+                {
+                    OnKeypressPressedWasUpCallbackArgument callback_argument(this, KEY_ID_LBUTTON);
+                    callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP, &callback_argument);
+                }
+                if(key_ptr->detail == 2)
+                {
+                    OnKeypressPressedWasUpCallbackArgument callback_argument(this, KEY_ID_MBUTTON);
+                    callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP, &callback_argument);
+                }
+                if(key_ptr->detail == 3)
+                {
+                    OnKeypressPressedWasUpCallbackArgument callback_argument(this, KEY_ID_RBUTTON);
+                    callback(WINDOW_CALLBACK_ID_KEYPRESS_PRESSED_WAS_UP, &callback_argument);
+                }
+            }
+        }
+
+        case XCB_EXPOSE:
+        {
+            if (m_present_callback_func != nullptr)
+            {
+                m_present_callback_func();
+            }
+
+            keepRunning = !m_window_should_close;
+            break;
+        }
+
+        default:
+        {
+            break;
+        }
+    }
+
+    free(event_ptr);
+
+    return keepRunning;
 }

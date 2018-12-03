@@ -47,6 +47,12 @@ namespace Anvil
          */
         WINDOW_CALLBACK_ID_ABOUT_TO_CLOSE,
 
+        /* Call-back issued when user ask window to close.
+         *
+         * callback_arg: Pointer to OnWindowCloseEventCallbackArgument instance.
+         */
+        WINDOW_CALLBACK_ID_CLOSE_EVENT,
+
         /* Call-back issued when the user releases a pressed key.
          *
          * callback_arg: pointer to a OnKeypressReleasedCallbackArgument instance.
@@ -144,6 +150,10 @@ namespace Anvil
         /** Returns system XCB connection, should be used by linux only */
         virtual void* get_connection() const { return nullptr; }
 
+        virtual void* get_XCBLoader() const {return nullptr; }
+
+        virtual bool msg_callback(xcb_generic_event_t* event_ptr) {return false; }
+
         /** Returns system window handle. */
         WindowHandle get_handle() const
         {
@@ -192,6 +202,9 @@ namespace Anvil
             return m_window_close_finished;
         }
 
+        /* Window handle */
+        WindowHandle    m_window;
+
     protected:
         /* protected variables */
         PresentCallbackFunction m_present_callback_func;
@@ -203,8 +216,6 @@ namespace Anvil
         volatile bool   m_window_should_close;
         volatile bool   m_window_close_finished;
 
-        /* Window handle */
-        WindowHandle    m_window;
         bool            m_window_owned;
 
         /* protected functions */

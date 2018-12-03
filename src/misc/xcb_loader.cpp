@@ -70,10 +70,12 @@ Result XCBLoader::init()
         }
         else
         {
-            m_funcs.pfn_xcbKeySymbolsAlloc        = reinterpret_cast<PFN_XcbKeySymbolsAlloc>       (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_KEYSYMS],
-                                                                                                    "xcb_key_symbols_alloc") );
-            m_funcs.pfn_xcbKeyReleaseLookupKeysym = reinterpret_cast<PFN_XcbKeyReleaseLookupKeysym>(dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_KEYSYMS],
-                                                                                                    "xcb_key_release_lookup_keysym") );
+            m_funcs.pfn_xcbKeySymbolsAlloc        = reinterpret_cast<PFN_XcbKeySymbolsAlloc>        (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_KEYSYMS],
+                                                                                                     "xcb_key_symbols_alloc") );
+            m_funcs.pfn_xcbKeyReleaseLookupKeysym = reinterpret_cast<PFN_XcbKeyReleaseLookupKeysym> (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_KEYSYMS],
+                                                                                                     "xcb_key_release_lookup_keysym") );
+            m_funcs.pfn_xcbKeyPressLookupKeysym   = reinterpret_cast<PFN_XcbKeyPressLookupKeysym>   (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_KEYSYMS],
+                                                                                                     "xcb_key_press_lookup_keysym") );
         }
 
         // resolve symbols from libxcb.so.1
@@ -92,6 +94,8 @@ Result XCBLoader::init()
                                                                                            "xcb_connect") );
             m_funcs.pfn_xcbCreateWindow       = reinterpret_cast<PFN_XcbCreateWindow>     (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                            "xcb_create_window") );
+            m_funcs.pfn_xcbChangeWindowAttributes = reinterpret_cast<PFN_XcbChangeWindowAttributes> (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                                     "xcb_change_window_attributes") );
             m_funcs.pfn_xcbDestroyWindow      = reinterpret_cast<PFN_XcbDestroyWindow>     (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_destroy_window") );
             m_funcs.pfn_xcbDisconnect         = reinterpret_cast<PFN_XcbDisconnect>        (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
@@ -106,6 +110,8 @@ Result XCBLoader::init()
                                                                                             "xcb_get_geometry_reply") );
             m_funcs.pfn_xcbGetSetup           = reinterpret_cast<PFN_XcbGetSetup>          (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_get_setup") );
+            m_funcs.pfn_xcbWarpPointer        = reinterpret_cast<PFN_XcbWarpPointer>       (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                            "xcb_warp_pointer") );
             m_funcs.pfn_xcbInternAtom         = reinterpret_cast<PFN_XcbInternAtom>        (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_intern_atom") );
             m_funcs.pfn_xcbInternAtomReply    = reinterpret_cast<PFN_XcbInternAtomReply>   (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
@@ -114,12 +120,37 @@ Result XCBLoader::init()
                                                                                             "xcb_map_window") );
             m_funcs.pfn_xcbPollForEvent       = reinterpret_cast<PFN_XcbPollForEvent>      (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_poll_for_event") );
+            m_funcs.pfn_xcbWaitForEvent       = reinterpret_cast<PFN_XcbWaitForEvent>      (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                            "xcb_wait_for_event") );
+            m_funcs.pfn_xcbSendEvent          = reinterpret_cast<PFN_XcbSendEvent>         (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                            "xcb_send_event") );
             m_funcs.pfn_xcbScreenNext         = reinterpret_cast<PFN_XcbScreenNext>        (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_screen_next") );
             m_funcs.pfn_xcbSetupRootsIterator = reinterpret_cast<PFN_XcbSetupRootsIterator>(dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_setup_roots_iterator") );
             m_funcs.pfn_xcbUnmapWindow        = reinterpret_cast<PFN_XcbUnmapWindow>       (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
                                                                                             "xcb_unmap_window") );
+            m_funcs.pfn_xcbCreatePixmap       = reinterpret_cast<PFN_XcbCreatePixmap>      (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                            "xcb_create_pixmap") );
+            m_funcs.pfn_xcbCreateCursor       = reinterpret_cast<PFN_XcbCreateCursor>      (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB],
+                                                                                            "xcb_create_cursor") );
+        }
+
+
+        m_library_handles[XCB_LOADER_LIBRARIES_XCB_XKB] = dlopen("libxcb-xkb.so.1",
+                                                                 RTLD_LAZY);
+
+        if (m_library_handles[XCB_LOADER_LIBRARIES_XCB_XKB] == nullptr)
+        {
+            result = Result::ErrorUnavailable;
+        }
+        else
+        {
+            m_funcs.pfn_xcbXkbUseExtension    = reinterpret_cast<PFN_XcbXkbUseExtension>   (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_XKB],
+                                                                                                  "xcb_xkb_use_extension") );
+            m_funcs.pfn_xcbXkbPerClientFlags  = reinterpret_cast<PFN_XcbXkbPerClientFlags> (dlsym(m_library_handles[XCB_LOADER_LIBRARIES_XCB_XKB],
+                                                                                                  "xcb_xkb_per_client_flags") );
+
         }
 
         if (result == Result::Success)

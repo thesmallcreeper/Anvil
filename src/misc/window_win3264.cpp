@@ -290,7 +290,7 @@ LRESULT CALLBACK Anvil::WindowWin3264::msg_callback_pfn_proc(HWND   in_window_ha
         {
             OnWindowAboutToCloseCallbackArgument callback_argument(window_ptr);
 
-            window_ptr->callback(WINDOW_CALLBACK_ID_ABOUT_TO_CLOSE,
+            window_ptr->callback(WINDOW_CALLBACK_ID_CLOSE_EVENT,
                 &callback_argument);
 
             ::DestroyWindow(window_ptr->m_window);
