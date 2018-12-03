@@ -415,10 +415,10 @@ void Anvil::WindowXcb::run()
     m_window_close_finished = true;
 }
 
-bool Anvil::WindowXcb::msg_callback(xcb_generic_event_t* event_ptr)
+bool Anvil::WindowXcb::msg_callback(void* event_ptr)
 {
     bool keepRunning = true;
-    switch (event_ptr->response_type & 0x7f)
+    switch (static_cast<xcb_generic_event_t*>(event_ptr)->response_type & 0x7f)
     {
         case XCB_CLIENT_MESSAGE:
             if (!((reinterpret_cast<xcb_client_message_event_t*>(event_ptr)->data.data32[0] == m_atom_wm_delete_window_ptr->atom) &&

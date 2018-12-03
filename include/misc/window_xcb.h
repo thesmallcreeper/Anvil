@@ -73,7 +73,7 @@ namespace Anvil
             const void* XCBLoader_ptr = static_cast<const void*>(&m_xcb_loader);
             return const_cast<void*>(XCBLoader_ptr);
         }
-        virtual bool msg_callback(xcb_generic_event_t* event_ptr);
+        virtual bool msg_callback(void* event_ptr);
 
     private:
         WindowXcb(const std::string&             in_title,
