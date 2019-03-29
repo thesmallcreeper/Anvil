@@ -24,6 +24,37 @@
 #include "wrappers/device.h"
 
 /** Please see header for specification */
+void Anvil::Utils::get_version_chunks_for_api_version(const Anvil::APIVersion& in_api_version,
+                                                      uint32_t*                out_major_version_ptr,
+                                                      uint32_t*                out_minor_version_ptr)
+{
+    switch (in_api_version)
+    {
+        case Anvil::APIVersion::_1_0:
+        {
+            *out_major_version_ptr = 1;
+            *out_minor_version_ptr = 0;
+
+            break;
+        }
+
+        case Anvil::APIVersion::_1_1:
+        {
+            *out_major_version_ptr = 1;
+            *out_minor_version_ptr = 1;
+
+            break;
+        }
+
+        default:
+        {
+            /* in_api_version must NOT be Anvil::APIVersion::UNKNOWN! */
+            anvil_assert_fail();
+        }
+    }
+}
+
+/** Please see header for specification */
 Anvil::MemoryFeatureFlags Anvil::Utils::get_memory_feature_flags_from_vk_property_flags(Anvil::MemoryPropertyFlags in_mem_type_flags,
                                                                                         Anvil::MemoryHeapFlags     in_mem_heap_flags)
 {
@@ -57,6 +88,11 @@ Anvil::MemoryFeatureFlags Anvil::Utils::get_memory_feature_flags_from_vk_propert
     if ((in_mem_heap_flags & Anvil::MemoryHeapFlagBits::MULTI_INSTANCE_BIT_KHR) != 0)
     {
         result |= Anvil::MemoryFeatureFlagBits::MULTI_INSTANCE_BIT;
+    }
+
+    if ((in_mem_type_flags & Anvil::MemoryPropertyFlagBits::PROTECTED_BIT) != 0)
+    {
+        result |= Anvil::MemoryFeatureFlagBits::PROTECTED_BIT;
     }
 
     return result;
@@ -109,9 +145,9 @@ void Anvil::Utils::convert_queue_family_bits_to_family_indices(const Anvil::Base
         Anvil::QueueFamilyType     queue_family_type;
     } queue_family_data[] =
     {
-        {Anvil::QueueFamilyFlagBits::COMPUTE_BIT,  Anvil::QueueFamilyType::COMPUTE},
-        {Anvil::QueueFamilyFlagBits::DMA_BIT,      Anvil::QueueFamilyType::TRANSFER},
-        {Anvil::QueueFamilyFlagBits::GRAPHICS_BIT, Anvil::QueueFamilyType::UNIVERSAL},
+        {Anvil::QueueFamilyFlagBits::COMPUTE_BIT,     Anvil::QueueFamilyType::COMPUTE},
+        {Anvil::QueueFamilyFlagBits::DMA_BIT,         Anvil::QueueFamilyType::TRANSFER},
+        {Anvil::QueueFamilyFlagBits::GRAPHICS_BIT,    Anvil::QueueFamilyType::UNIVERSAL},
     };
 
     for (const auto& current_queue_fam_data : queue_family_data)
@@ -1031,6 +1067,11 @@ void Anvil::Utils::get_vk_property_flags_from_memory_feature_flags(Anvil::Memory
     if ((in_mem_feature_flags & Anvil::MemoryFeatureFlagBits::MULTI_INSTANCE_BIT) != 0)
     {
         result_mem_heap_flags |= Anvil::MemoryHeapFlagBits::MULTI_INSTANCE_BIT_KHR;
+    }
+
+    if ((in_mem_feature_flags & Anvil::MemoryFeatureFlagBits::PROTECTED_BIT) != 0)
+    {
+        result_mem_type_flags |= Anvil::MemoryPropertyFlagBits::PROTECTED_BIT;
     }
 
     *out_mem_heap_flags_ptr = result_mem_heap_flags;

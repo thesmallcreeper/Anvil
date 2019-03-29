@@ -76,6 +76,7 @@ namespace Anvil
             KEY_ID_RBUTTON  = ANVIL_KEY_HELPER(Pointer_Button2),
             KEY_ID_MBUTTON  = ANVIL_KEY_HELPER(Pointer_Button3),
         #endif
+
 #endif
         KEY_ID_COUNT,
 

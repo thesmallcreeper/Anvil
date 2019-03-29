@@ -64,11 +64,13 @@ namespace Anvil
             bool     bake                            (Anvil::MemoryAllocator::Items&              in_items) final;
             VkResult map                             (void*                                       in_memory_object,
                                                       VkDeviceSize                                in_start_offset,
+                                                      VkDeviceSize                                in_memory_block_start_offset,
                                                       VkDeviceSize                                in_size,
                                                       void**                                      out_result_ptr) final;
             bool     supports_baking                 () const final;
             bool     supports_external_memory_handles(const Anvil::ExternalMemoryHandleTypeFlags& in_external_memory_handle_types) const final;
             bool     supports_device_masks           ()                                                                            const final;
+            bool     supports_protected_memory       ()                                                                            const final;
             void     unmap                           (void*                                       in_memory_object) final;
 
             /* Private functions */

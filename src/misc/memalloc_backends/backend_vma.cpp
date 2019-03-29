@@ -218,6 +218,8 @@ bool Anvil::MemoryAllocatorBackends::VMA::bake(Anvil::MemoryAllocator::Items& in
      */
     for (auto& current_item_ptr : in_items)
     {
+        anvil_assert(current_item_ptr->memory_priority == FLT_MAX); /* VMA doesn't support memory_priority */
+
         MemoryBlockUniquePtr new_memory_block_ptr(nullptr,
                                                   std::default_delete<Anvil::MemoryBlock>() );
 
@@ -359,17 +361,26 @@ bool Anvil::MemoryAllocatorBackends::VMA::init()
 
 VkResult Anvil::MemoryAllocatorBackends::VMA::map(void*        in_memory_object,
                                                   VkDeviceSize in_start_offset,
+                                                  VkDeviceSize in_memory_block_start_offset,
                                                   VkDeviceSize in_size,
                                                   void**       out_result_ptr)
 {
+    VkResult result;
+    void*    result_ptr = nullptr;
+
     ANVIL_REDUNDANT_ARGUMENT(in_size);
     ANVIL_REDUNDANT_ARGUMENT(in_start_offset);
 
     anvil_assert(in_start_offset == 0);
 
-    return vmaMapMemory(m_vma_allocator_ptr->get_handle(),
-                        static_cast<VmaAllocation>(in_memory_object),
-                        out_result_ptr);
+    result = vmaMapMemory(m_vma_allocator_ptr->get_handle(),
+                          static_cast<VmaAllocation>(in_memory_object),
+                         &result_ptr);
+
+    result_ptr = reinterpret_cast<uint8_t*>(result_ptr) - in_memory_block_start_offset;
+
+    *out_result_ptr = result_ptr;
+    return result;
 }
 
 /** Please see header for specification */
@@ -424,6 +435,12 @@ bool Anvil::MemoryAllocatorBackends::VMA::supports_external_memory_handles(const
     /* Vulkan Memory Allocator does NOT support external memory handles */
     ANVIL_REDUNDANT_VARIABLE_CONST(in_external_memory_handle_types);
 
+    return false;
+}
+
+bool Anvil::MemoryAllocatorBackends::VMA::supports_protected_memory() const
+{
+    /* Vulkan Memory Allocator does NOT support VK 1.1 features */
     return false;
 }
 
