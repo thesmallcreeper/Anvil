@@ -10,8 +10,11 @@ option(ANVIL_USE_BUILT_IN_VULKAN_HEADERS           "Use built-in Vulkan headers.
 
 
 if (MSVC)
+    add_definitions(/arch:AVX)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
     set (DEFAULT_DYNAMIC_VK_DLL "vulkan-1.dll")
 else()
+    add_definitions(-mavx -march=corei7-avx -mtune=corei7-avx)
     set (DEFAULT_DYNAMIC_VK_DLL "libvulkan.so")
 endif()
 
