@@ -8,13 +8,21 @@ option(ANVIL_LINK_STATICALLY_WITH_VULKAN_LIB       "Link statically with Vulkan 
 option(ANVIL_LINK_WITH_GLSLANG                     "Links with glslang, instead of spawning a new process whenever GLSL->SPIR-V conversion is required" ON)
 option(ANVIL_USE_BUILT_IN_VULKAN_HEADERS           "Use built-in Vulkan headers. If disabled, VK_SDK_PATH and VULKAN_SDK env vars will be assumed to hold the location where the headers can be found." ON)
 
-
 if (MSVC)
     add_definitions(/arch:AVX)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+    set(relFlags "/Ox /Ob2 /Oi /Ot /GT /GF /GS- /fp:fast /fp:except- /MP")
+    set(relLinkFlags "/OPT:ICF /INCREMENTAL:NO")
+else ()
+    add_definitions(-mavx -march=corei7-avx -mtune=corei7-avx)
+    set(OPT_FLAGS "-O3 -ffast-math")
+    set(CMAKE_C_FLAGS_RELEASE   "${CMAKE_C_FLAGS_RELEASE} ${OPT_FLAGS}")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${OPT_FLAGS}")
+endif()
+
+if (WIN32)
     set (DEFAULT_DYNAMIC_VK_DLL "vulkan-1.dll")
 else()
-    add_definitions(-mavx -march=corei7-avx -mtune=corei7-avx)
     set (DEFAULT_DYNAMIC_VK_DLL "libvulkan.so")
 endif()
 
