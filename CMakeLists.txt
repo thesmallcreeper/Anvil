@@ -28,6 +28,7 @@ else ()
 endif()
 
 if (WIN32)
+    add_compile_definitions( _WIN32_WINNT=0x0601)
     set (DEFAULT_DYNAMIC_VK_DLL "vulkan-1.dll")
 else()
     set (DEFAULT_DYNAMIC_VK_DLL "libvulkan.so")

@@ -73,8 +73,8 @@ void* Anvil::Library::get_proc_address(const char* in_func_name) const
 
     #if defined(_WIN32)
     {
-        result_ptr = ::GetProcAddress(reinterpret_cast<HMODULE>(m_handle),
-                                      in_func_name);
+        result_ptr = (void *)::GetProcAddress(reinterpret_cast<HMODULE>(m_handle),
+                                              in_func_name);
     }
     #else
     {

@@ -70,9 +70,11 @@
         #endif
     #endif
 
-    #if _MSC_VER <= 1800
-        #ifndef snprintf
-            #define snprintf _snprintf
+    #ifdef _MSC_VER
+        #if _MSC_VER <= 1800
+            #ifndef snprintf
+                #define snprintf _snprintf
+            #endif
         #endif
     #endif
 
