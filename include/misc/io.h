@@ -53,6 +53,7 @@ namespace Anvil
 #ifdef _WIN32
         #if defined(ANVIL_INCLUDE_WIN3264_WINDOW_SYSTEM_SUPPORT)
             KEY_ID_ESCAPE   = ANVIL_KEY_HELPER(ESCAPE),
+            KEY_ID_TAB      = ANVIL_KEY_HELPER(TAB),
             KEY_ID_UP       = ANVIL_KEY_HELPER(UP),
             KEY_ID_DOWN     = ANVIL_KEY_HELPER(DOWN),
             KEY_ID_LEFT     = ANVIL_KEY_HELPER(LEFT),
@@ -66,6 +67,7 @@ namespace Anvil
 #else
         #if defined(ANVIL_INCLUDE_XCB_WINDOW_SYSTEM_SUPPORT)
             KEY_ID_ESCAPE   = ANVIL_KEY_HELPER(Escape),
+            KEY_ID_TAB      = ANVIL_KEY_HELPER(Tab),
             KEY_ID_UP       = ANVIL_KEY_HELPER(Up),
             KEY_ID_DOWN     = ANVIL_KEY_HELPER(Down),
             KEY_ID_LEFT     = ANVIL_KEY_HELPER(Left),
