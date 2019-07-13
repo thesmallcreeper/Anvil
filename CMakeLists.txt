@@ -6,7 +6,7 @@ option(ANVIL_INCLUDE_XCB_WINDOW_SYSTEM_SUPPORT     "Includes XCB window system s
 option(ANVIL_LINK_EXAMPLES                         "Build examples showing how to use Anvil" OFF)
 option(ANVIL_LINK_STATICALLY_WITH_VULKAN_LIB       "Link statically with Vulkan loader. If disabled, Anvil will load the func ptrs from ANVIL_VULKAN_DYNAMIC_DLL_DEPENDENCY at VK instance creation time" ON)
 option(ANVIL_LINK_WITH_GLSLANG                     "Links with glslang, instead of spawning a new process whenever GLSL->SPIR-V conversion is required" ON)
-option(ANVIL_USE_BUILT_IN_VULKAN_HEADERS           "Use built-in Vulkan headers. If disabled, VK_SDK_PATH and VULKAN_SDK env vars will be assumed to hold the location where the headers can be found." ON)
+option(ANVIL_USE_BUILT_IN_VULKAN_HEADERS           "Use built-in Vulkan headers. If disabled, VK_SDK_PATH and VULKAN_SDK env vars will be assumed to hold the location where the headers can be found." OFF)
 
 if (MSVC)
     add_definitions(/arch:AVX)
