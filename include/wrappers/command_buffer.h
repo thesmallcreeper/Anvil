@@ -69,6 +69,7 @@ namespace Anvil
         COMMAND_TYPE_BIND_DESCRIPTOR_SETS,
         COMMAND_TYPE_BIND_INDEX_BUFFER,
         COMMAND_TYPE_BIND_PIPELINE,
+        COMMAND_TYPE_BIND_VK_PIPELINE,
         COMMAND_TYPE_BIND_TRANSFORM_FEEDBACK_BUFFERS_EXT,
         COMMAND_TYPE_BIND_VERTEX_BUFFER,
         COMMAND_TYPE_BLIT_IMAGE,
@@ -588,6 +589,11 @@ namespace Anvil
          **/
         bool record_bind_pipeline(Anvil::PipelineBindPoint in_pipeline_bind_point,
                                   Anvil::PipelineID        in_pipeline_id);
+
+        /** Avoids PipelineID translation
+        **/
+        bool record_bind_vk_pipeline(Anvil::PipelineBindPoint in_pipeline_bind_point, 
+                                     VkPipeline in_pipeline_vk);
 
         /** Issues a vkCmdBindTransformFeedbackBuffersEXT() call and appends it to the internal vector of commands
          *  recorded for the specified command buffer (for builds with STORE_COMMAND_BUFFER_COMMANDS
@@ -1542,6 +1548,7 @@ namespace Anvil
         struct BindDescriptorSetsCommand;
         struct BindIndexBufferCommand;
         struct BindPipelineCommand;
+        struct BindVkPipelineCommand;
         struct BindVertexBuffersCommand;
         struct BlitImageCommand;
         struct ClearAttachmentsCommand;
@@ -1680,6 +1687,22 @@ namespace Anvil
                  /* Stub */
             }
         } BindPipelineCommand;
+
+        // Hacking around
+        typedef struct BindVkPipelineCommand : public Command
+        {
+            Anvil::PipelineBindPoint pipeline_bind_point;
+            VkPipeline vk_pipeline;
+
+            explicit BindVkPipelineCommand(Anvil::PipelineBindPoint in_pipeline_bind_point, 
+                                           VkPipeline in_pipeline_vk);
+
+            /* Destructor. */
+            virtual ~BindVkPipelineCommand()
+            {
+                /* Stub */
+            }
+        } BindPipelineVkCommand;
 
 
         /** Holds a single vertex buffer binding, as specified by "in_buffer_ptrs" and "in_offset_ptrs"

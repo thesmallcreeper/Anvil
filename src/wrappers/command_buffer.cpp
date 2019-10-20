@@ -190,6 +190,14 @@ Anvil::CommandBufferBase::BindPipelineCommand::BindPipelineCommand(Anvil::Pipeli
     pipeline_id         = in_pipeline_id;
 }
 
+Anvil::CommandBufferBase::BindVkPipelineCommand::BindVkPipelineCommand(Anvil::PipelineBindPoint in_pipeline_bind_point, 
+                                                                       VkPipeline     in_vk_pipeline)
+    :Command(COMMAND_TYPE_BIND_VK_PIPELINE)
+{
+    pipeline_bind_point = in_pipeline_bind_point;
+    vk_pipeline = in_vk_pipeline;
+}
+
 /** Please see header for specification */
 Anvil::CommandBufferBase::BindVertexBuffersCommand::BindVertexBuffersCommand(uint32_t            in_start_binding,
                                                                              uint32_t            in_binding_count,
@@ -1517,6 +1525,44 @@ bool Anvil::CommandBufferBase::record_bind_pipeline(Anvil::PipelineBindPoint in_
         Anvil::Vulkan::vkCmdBindPipeline(m_command_buffer,
                                          static_cast<VkPipelineBindPoint>(in_pipeline_bind_point),
                                          pipeline_vk);
+    }
+    unlock();
+    m_parent_command_pool_ptr->unlock();
+
+    result = true;
+end:
+    return result;
+}
+
+bool Anvil::CommandBufferBase::record_bind_vk_pipeline(Anvil::PipelineBindPoint in_pipeline_bind_point,
+                                                       VkPipeline in_pipeline_vk)
+{
+    /* Command supported inside and outside the renderpass. */
+    bool       result(false);
+
+    if (!m_recording_in_progress)
+    {
+        anvil_assert(m_recording_in_progress);
+
+        goto end;
+    }
+
+#ifdef STORE_COMMAND_BUFFER_COMMANDS
+    {
+        if (!m_command_stashing_disabled)
+        {
+            m_commands.push_back(BindVkPipelineCommand(in_pipeline_bind_point,
+                                                       in_pipeline_vk));
+        }
+    }
+#endif
+
+    m_parent_command_pool_ptr->lock();
+    lock();
+    {
+        Anvil::Vulkan::vkCmdBindPipeline(m_command_buffer,
+                                         static_cast<VkPipelineBindPoint>(in_pipeline_bind_point),
+                                         in_pipeline_vk);
     }
     unlock();
     m_parent_command_pool_ptr->unlock();
